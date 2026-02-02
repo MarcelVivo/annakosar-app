@@ -70,18 +70,15 @@ export async function DELETE(
   context: any
 ) {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json(
-      { message: "Skipped during build" },
-      { status: 200 }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const appointmentId = context?.params?.id;
 
   if (!appointmentId) {
-    return NextResponse.json(
-      { message: "Missing appointment id." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "Missing appointment id." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -93,22 +90,34 @@ export async function DELETE(
     .eq("id", appointmentId);
 
   if (error) {
-    return NextResponse.json(
-      { message: "Could not cancel appointment." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not cancel appointment." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  return NextResponse.json(
-    { message: "Appointment cancelled successfully." },
-    { status: 200 }
+  return new Response(
+    JSON.stringify({ message: "Appointment cancelled successfully." }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
   );
 }
 
 export async function GET() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function POST() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }

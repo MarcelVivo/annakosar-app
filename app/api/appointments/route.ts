@@ -68,15 +68,15 @@ async function getAuthenticatedUser(request: Request) {
 
 export async function GET(request: Request) {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json(
-      { message: "Skipped during build" },
-      { status: 200 }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const { user, error: authError } = await getAuthenticatedUser(request);
   if (!user) {
-    return NextResponse.json({ message: authError }, { status: 401 });
+    return new Response(
+      JSON.stringify({ message: authError }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const supabase = createSupabaseServerClient();
@@ -90,26 +90,29 @@ export async function GET(request: Request) {
     .order("starts_at", { ascending: true });
 
   if (error) {
-    return NextResponse.json(
-      { message: "Could not load appointments." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not load appointments." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  return NextResponse.json({ appointments: data ?? [] }, { status: 200 });
+  return new Response(
+    JSON.stringify({ appointments: data ?? [] }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function POST(request: Request) {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json(
-      { message: "Skipped during build" },
-      { status: 200 }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const { user, error: authError } = await getAuthenticatedUser(request);
   if (!user) {
-    return NextResponse.json({ message: authError }, { status: 401 });
+    return new Response(
+      JSON.stringify({ message: authError }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const body: PostBody | null = await request
@@ -120,24 +123,24 @@ export async function POST(request: Request) {
   const startsAt = body?.startsAt;
 
   if (!type || !["free_intro", "session"].includes(type)) {
-    return NextResponse.json(
-      { message: "Invalid type. Use 'free_intro' or 'session'." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "Invalid type. Use 'free_intro' or 'session'." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
   if (!startsAt) {
-    return NextResponse.json(
-      { message: "startsAt is required." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "startsAt is required." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
   const startsAtDate = new Date(startsAt);
   if (Number.isNaN(startsAtDate.getTime())) {
-    return NextResponse.json(
-      { message: "startsAt must be a valid ISO timestamp." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "startsAt must be a valid ISO timestamp." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -152,16 +155,16 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existingError) {
-    return NextResponse.json(
-      { message: "Could not check availability." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not check availability." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
   if (existing) {
-    return NextResponse.json(
-      { message: "This time slot is already booked." },
-      { status: 409 }
+    return new Response(
+      JSON.stringify({ message: "This time slot is already booked." }),
+      { status: 409, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -177,19 +180,34 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json(
-      { message: "Could not create appointment." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not create appointment." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  return NextResponse.json({ appointment: data }, { status: 201 });
+  return new Response(
+    JSON.stringify({ appointment: data }),
+    { status: 201, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function PUT() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function DELETE() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }

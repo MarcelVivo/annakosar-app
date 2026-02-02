@@ -85,17 +85,14 @@ async function requireAdmin(request: Request) {
 
 export async function GET(request: Request) {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json(
-      { message: "Skipped during build" },
-      { status: 200 }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const adminCheck = await requireAdmin(request);
   if (!adminCheck.ok) {
-    return NextResponse.json(
-      { message: adminCheck.message },
-      { status: adminCheck.status }
+    return new Response(
+      JSON.stringify({ message: adminCheck.message }),
+      { status: adminCheck.status, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -109,15 +106,24 @@ export async function GET(request: Request) {
     .order("starts_at", { ascending: true });
 
   if (error) {
-    return NextResponse.json(
-      { message: "Could not load appointments." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not load appointments." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  return NextResponse.json({ appointments: data ?? [] }, { status: 200 });
+  return new Response(
+    JSON.stringify({ appointments: data ?? [] }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function POST() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }

@@ -10,10 +10,7 @@ type LoginBody = {
 
 export async function POST(request: Request) {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json(
-      { message: "Skipped during build" },
-      { status: 200 }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const body: LoginBody | null = await request
@@ -24,9 +21,9 @@ export async function POST(request: Request) {
   const password = body?.password;
 
   if (!email || !password) {
-    return NextResponse.json(
-      { message: "Email and password are required." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "Email and password are required." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -39,9 +36,9 @@ export async function POST(request: Request) {
     });
 
     if (error || !data?.user) {
-      return NextResponse.json(
-        { message: error?.message ?? "Invalid credentials." },
-        { status: 401 }
+      return new Response(
+        JSON.stringify({ message: error?.message ?? "Invalid credentials." }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -54,31 +51,37 @@ export async function POST(request: Request) {
       .single();
 
     if (profileError) {
-      return NextResponse.json(
-        { message: "Could not fetch user role." },
-        { status: 500 }
+      return new Response(
+        JSON.stringify({ message: "Could not fetch user role." }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
     if (!profile?.role) {
-      return NextResponse.json(
-        { message: "User role not found." },
-        { status: 404 }
+      return new Response(
+        JSON.stringify({ message: "User role not found." }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    return NextResponse.json(
-      { id: userId, role: profile.role },
-      { status: 200 }
+    return new Response(
+      JSON.stringify({ id: userId, role: profile.role }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
-    return NextResponse.json(
-      { message: "Unexpected server error." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Unexpected server error." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }

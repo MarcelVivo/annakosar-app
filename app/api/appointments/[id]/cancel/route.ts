@@ -70,24 +70,24 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json(
-      { message: "Skipped during build" },
-      { status: 200 }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const { id: appointmentId } = await params;
 
   if (!appointmentId || !isUuid(appointmentId)) {
-    return NextResponse.json(
-      { message: "Invalid appointment id." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "Invalid appointment id." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
   const { user, error: authError } = await getAuthenticatedUser(request);
   if (!user) {
-    return NextResponse.json({ message: authError }, { status: 401 });
+    return new Response(
+      JSON.stringify({ message: authError }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const supabase = createSupabaseServerClient();
@@ -99,16 +99,18 @@ export async function POST(
     .maybeSingle();
 
   if (fetchError) {
-    return NextResponse.json(
-      { message: "Could not load appointment." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not load appointment." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
   if (!appointment || appointment.user_id !== user.id) {
-    return NextResponse.json(
-      { message: "You are not allowed to cancel this appointment." },
-      { status: 403 }
+    return new Response(
+      JSON.stringify({
+        message: "You are not allowed to cancel this appointment.",
+      }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -121,23 +123,44 @@ export async function POST(
     .single();
 
   if (updateError) {
-    return NextResponse.json(
-      { message: "Could not cancel appointment." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not cancel appointment." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  return NextResponse.json({ appointment: updated }, { status: 200 });
+  return new Response(
+    JSON.stringify({ appointment: updated }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function GET() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function PUT() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function DELETE() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }

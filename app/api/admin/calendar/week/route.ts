@@ -82,17 +82,14 @@ function isValidIsoDate(value: string | null): value is string {
 
 export async function GET(request: Request) {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json(
-      { message: "Skipped during build" },
-      { status: 200 }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const adminCheck = await requireAdmin(request);
   if (!adminCheck.ok) {
-    return NextResponse.json(
-      { message: adminCheck.message },
-      { status: adminCheck.status }
+    return new Response(
+      JSON.stringify({ message: adminCheck.message }),
+      { status: adminCheck.status, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -101,9 +98,9 @@ export async function GET(request: Request) {
   const weekEnd = searchParams.get("weekEnd");
 
   if (!isValidIsoDate(weekStart) || !isValidIsoDate(weekEnd)) {
-    return NextResponse.json(
-      { message: "weekStart and weekEnd must be valid ISO date strings." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "weekStart and weekEnd must be valid ISO date strings." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -111,9 +108,9 @@ export async function GET(request: Request) {
   const endDate = new Date(weekEnd);
 
   if (startDate > endDate) {
-    return NextResponse.json(
-      { message: "weekStart must be before or equal to weekEnd." },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "weekStart must be before or equal to weekEnd." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -127,23 +124,44 @@ export async function GET(request: Request) {
     .order("starts_at", { ascending: true });
 
   if (error) {
-    return NextResponse.json(
-      { message: "Could not load appointments." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ message: "Could not load appointments." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  return NextResponse.json({ appointments: data ?? [] }, { status: 200 });
+  return new Response(
+    JSON.stringify({ appointments: data ?? [] }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function POST() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function PUT() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function DELETE() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }

@@ -82,13 +82,7 @@ function isUuid(value: string) {
 
 export async function DELETE(request: Request): Promise<Response | NextResponse> {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(
-      JSON.stringify({ message: "Skipped during build" }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(null, { status: 204 });
   }
 
   const adminCheck = await requireAdmin(request);
@@ -107,9 +101,9 @@ export async function DELETE(request: Request): Promise<Response | NextResponse>
   const appointmentId = segments[segments.length - 1] ?? "";
 
   if (!appointmentId) {
-    return NextResponse.json(
-      { message: "Missing appointment id" },
-      { status: 400 }
+    return new Response(
+      JSON.stringify({ message: "Missing appointment id" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -185,13 +179,31 @@ export async function DELETE(request: Request): Promise<Response | NextResponse>
 }
 
 export async function GET() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function POST() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
 
 export async function PUT() {
-  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(
+    JSON.stringify({ message: "Method not allowed." }),
+    { status: 405, headers: { "Content-Type": "application/json" } }
+  );
 }
