@@ -1,0 +1,123 @@
+import "server-only";
+
+import { NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+function parseCookies(headerValue: string | null): Record<string, string> {
+  if (!headerValue) return {};
+  return headerValue.split(";").reduce<Record<string, string>>((acc, part) => {
+    const [rawKey, ...rest] = part.trim().split("=");
+    const key = rawKey.trim();
+    const value = rest.join("=") ?? "";
+    acc[key] = value;
+    return acc;
+  }, {});
+}
+
+function extractAccessToken(request: Request): string | null {
+  const cookieHeader = request.headers.get("cookie");
+  const allCookies = parseCookies(cookieHeader);
+
+  if (allCookies["sb-access-token"]) {
+    return allCookies["sb-access-token"];
+  }
+
+  const authCookieKey = Object.keys(allCookies).find(
+    (name) => name.startsWith("sb-") && name.endsWith("-auth-token")
+  );
+
+  if (authCookieKey) {
+    try {
+      const parsed = JSON.parse(allCookies[authCookieKey]);
+      if (Array.isArray(parsed) && typeof parsed[0] === "string") {
+        return parsed[0];
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+async function requireAdmin(request: Request) {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    throw new Error("Skipped during build");
+  }
+
+  const token = extractAccessToken(request);
+  if (!token) {
+    return { ok: false as const, status: 401, message: "Not authenticated." };
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser(
+    token
+  );
+  if (userError || !userData?.user) {
+    return { ok: false as const, status: 401, message: "Invalid session." };
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userData.user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return {
+      ok: false as const,
+      status: 403,
+      message: "Access denied.",
+    };
+  }
+
+  if (profile.role !== "admin") {
+    return {
+      ok: false as const,
+      status: 403,
+      message: "Admin role required.",
+    };
+  }
+
+  return { ok: true as const, userId: userData.user.id };
+}
+
+export async function GET(request: Request) {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return NextResponse.json(
+      { message: "Skipped during build" },
+      { status: 200 }
+    );
+  }
+
+  const adminCheck = await requireAdmin(request);
+  if (!adminCheck.ok) {
+    return NextResponse.json(
+      { message: adminCheck.message },
+      { status: adminCheck.status }
+    );
+  }
+
+  const supabase = createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(
+      "id, user_id, type, starts_at, status, created_at, user:auth.users(email)"
+    )
+    .order("starts_at", { ascending: true });
+
+  if (error) {
+    return NextResponse.json(
+      { message: "Could not load appointments." },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ appointments: data ?? [] }, { status: 200 });
+}
+
+export async function POST() {
+  return NextResponse.json({ message: "Method not allowed." }, { status: 405 });
+}
