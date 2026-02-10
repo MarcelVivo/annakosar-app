@@ -15,6 +15,9 @@ export default function BookPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [fetchState, setFetchState] = useState<FetchState>("idle");
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [appointmentsError, setAppointmentsError] = useState<string | null>(
+    null
+  );
 
   const [type, setType] = useState<Appointment["type"]>("free_intro");
   const [startsAt, setStartsAt] = useState("");
@@ -26,13 +29,14 @@ export default function BookPage() {
   const loadAppointments = async () => {
     setFetchState("loading");
     setFetchError(null);
+    setAppointmentsError(null);
     try {
       const res = await fetch("/api/appointments");
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(
-          data?.message ?? "Termine konnten nicht geladen werden."
-        );
+        setAppointments([]);
+        setAppointmentsError("Bitte einloggen, um deine Termine zu sehen.");
+        setFetchState("idle");
+        return;
       }
       const data = await res.json();
       setAppointments(data.appointments ?? []);
@@ -160,15 +164,24 @@ export default function BookPage() {
               {fetchError}
             </p>
           )}
+          {fetchState === "idle" && appointmentsError && (
+            <p className="text-sm text-gray-700" role="alert">
+              {appointmentsError}
+            </p>
+          )}
           {cancelError && (
             <p className="text-sm text-red-600" role="alert">
               {cancelError}
             </p>
           )}
-          {fetchState === "idle" && appointments.length === 0 && (
+          {fetchState === "idle" &&
+            !appointmentsError &&
+            appointments.length === 0 && (
             <p>Keine Termine geplant.</p>
           )}
-          {fetchState === "idle" && appointments.length > 0 && (
+          {fetchState === "idle" &&
+            !appointmentsError &&
+            appointments.length > 0 && (
             <ul className="divide-y">
               {appointments.map((appt) => {
                 const start = new Date(appt.starts_at);
