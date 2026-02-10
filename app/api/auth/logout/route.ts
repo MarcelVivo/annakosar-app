@@ -1,11 +1,12 @@
 import "server-only";
-
-import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST() {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(null, { status: 204 });
+    return new Response(
+      JSON.stringify({ success: true, message: "Skipped during build." }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -14,7 +15,7 @@ export async function POST() {
 
     if (error) {
       return new Response(
-        JSON.stringify({ message: "Logout failed." }),
+        JSON.stringify({ success: false, message: "Logout failed." }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -25,7 +26,7 @@ export async function POST() {
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ message: "Unexpected server error." }),
+      JSON.stringify({ success: false, message: "Unexpected server error." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -33,10 +34,13 @@ export async function POST() {
 
 export async function GET() {
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(null, { status: 204 });
+    return new Response(
+      JSON.stringify({ success: true, message: "Skipped during build." }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   }
   return new Response(
-    JSON.stringify({ message: "Method not allowed." }),
+    JSON.stringify({ success: false, message: "Method not allowed." }),
     { status: 405, headers: { "Content-Type": "application/json" } }
   );
 }

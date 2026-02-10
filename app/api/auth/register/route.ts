@@ -1,9 +1,11 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-type LoginBody = {
+type RegisterBody = {
   email?: string;
   password?: string;
+  firstName?: string;
+  lastName?: string;
 };
 
 export async function POST(request: Request) {
@@ -14,18 +16,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const body: LoginBody | null = await request
-    .json()
-    .catch(() => null);
+  const body: RegisterBody | null = await request.json().catch(() => null);
 
   const email = body?.email?.trim();
   const password = body?.password;
+  const firstName = body?.firstName?.trim();
+  const lastName = body?.lastName?.trim();
 
-  if (!email || !password) {
+  if (!email || !password || !firstName || !lastName) {
     return new Response(
       JSON.stringify({
         success: false,
-        message: "Email and password are required.",
+        message: "Email, password, first name and last name are required.",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
   try {
     const supabase = createSupabaseServerClient();
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -43,40 +45,34 @@ export async function POST(request: Request) {
       return new Response(
         JSON.stringify({
           success: false,
-          message: error?.message ?? "Invalid credentials.",
+          message: error?.message ?? "Registration failed.",
         }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
     const userId = data.user.id;
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      role: "user",
+    });
 
     if (profileError) {
       return new Response(
         JSON.stringify({
           success: false,
-          message: "Could not fetch user role.",
+          message: "Profile creation failed.",
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    if (!profile?.role) {
-      return new Response(
-        JSON.stringify({ success: false, message: "User role not found." }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
     return new Response(
-      JSON.stringify({ success: true, id: userId, role: profile.role }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ success: true, id: userId, role: "user" }),
+      { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
     return new Response(
