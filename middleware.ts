@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/", "/login"];
-const PROTECTED_PREFIXES = ["/book", "/admin"];
+const PROTECTED_PREFIXES = ["/admin", "/api/admin", "/api/appointments"];
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
