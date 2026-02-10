@@ -53,7 +53,7 @@ export default function LoginPage() {
     setLoading(true);
 
     const endpoint =
-      mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+      mode === "login" ? "/api/auth/login" : "/api/auth/register";
 
     if (mode === "signup" && password !== passwordConfirm) {
       setPasswordError("Passwörter stimmen nicht überein.");
@@ -64,7 +64,14 @@ export default function LoginPage() {
     const payload =
       mode === "login"
         ? { email, password }
-        : { email, password, firstName, lastName };
+        : {
+            email,
+            password,
+            firstName,
+            lastName,
+            first_name: firstName,
+            last_name: lastName,
+          };
 
     try {
       const response = await fetch(endpoint, {
