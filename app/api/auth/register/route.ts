@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password } = body;
+    const { email, password, firstName, lastName } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -13,11 +13,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = createSupabaseBrowserClient();
+    const supabase = createSupabaseServerClient();
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name: firstName ?? "",
+          last_name: lastName ?? "",
+        },
+      },
     });
 
     if (error) {
