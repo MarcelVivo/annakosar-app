@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +13,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = createSupabaseServerClient();
+    // ✅ WICHTIG: Browser Client (anon key), NICHT service_role
+    const supabase = createSupabaseBrowserClient();
 
     const { data, error } = await supabase.auth.signUp({
       email,
