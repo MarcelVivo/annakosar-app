@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
   try {
@@ -13,8 +13,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ WICHTIG: Browser Client (anon key), NICHT service_role
-    const supabase = createSupabaseBrowserClient();
+    // ✅ WICHTIG:
+    // Auth-SignUp MUSS mit ANON Key laufen, NICHT service_role
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     const { data, error } = await supabase.auth.signUp({
       email,
