@@ -1,5 +1,6 @@
 'use client';
 
+import Link from "next/link";
 import { useEffect, useState, FormEvent } from "react";
 
 type Appointment = {
@@ -34,7 +35,7 @@ export default function BookPage() {
       const res = await fetch("/api/appointments");
       if (!res.ok) {
         setAppointments([]);
-        setAppointmentsError("Bitte einloggen, um deine Termine zu sehen.");
+        setAppointmentsError("Bitte einloggen.");
         setFetchState("idle");
         return;
       }
@@ -165,9 +166,15 @@ export default function BookPage() {
             </p>
           )}
           {fetchState === "idle" && appointmentsError && (
-            <p className="text-sm text-gray-700" role="alert">
-              {appointmentsError}
-            </p>
+            <div className="flex items-center gap-3 text-sm text-gray-700" role="alert">
+              <span>{appointmentsError}</span>
+              <Link
+                href="/login"
+                className="rounded bg-black px-3 py-1.5 text-white hover:bg-gray-900"
+              >
+                Login
+              </Link>
+            </div>
           )}
           {cancelError && (
             <p className="text-sm text-red-600" role="alert">
