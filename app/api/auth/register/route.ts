@@ -26,16 +26,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (password.length < 6) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: "Password must be at least 6 characters long.",
-      }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
   try {
     const supabase = createSupabaseServerClient();
 
@@ -61,16 +51,15 @@ export async function POST(request: Request) {
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        id: data.user.id,
-        email: data.user.email,
-      }),
-      { status: 201, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ success: true }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: any) {
     return new Response(
-      JSON.stringify({ success: false, message: "Unexpected server error." }),
+      JSON.stringify({
+        success: false,
+        message: err?.message ?? "Unexpected server error.",
+      }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
