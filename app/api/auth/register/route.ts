@@ -1,74 +1,40 @@
-import "server-only";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type RegisterBody = {
-  email?: string;
-  password?: string;
-  first_name?: string;
-  last_name?: string;
-};
-
-export async function POST(request: Request) {
-  const body: RegisterBody | null = await request.json().catch(() => null);
-
-  const email = body?.email?.trim();
-  const password = body?.password?.trim();
-  const first_name = body?.first_name?.trim();
-  const last_name = body?.last_name?.trim();
-
-  if (!email || !password || !first_name || !last_name) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: "email, password, first_name and last_name are required.",
-      }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
+export async function POST(req: Request) {
   try {
-    const supabase = createSupabaseServerClient();
+    const body = await req.json();
+    const { email, password } = body;
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password required" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createSupabaseBrowserClient();
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          first_name,
-          last_name,
-        },
-      },
     });
 
-    if (error || !data?.user) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: error?.message ?? "Registration failed.",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
       );
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: err?.message ?? "Unexpected server error.",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json({
+      success: true,
+      userId: data.user?.id ?? null,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Unexpected server error" },
+      { status: 500 }
     );
   }
 }
-
-export async function GET() {
-  return new Response(
-    JSON.stringify({ success: false, message: "Method not allowed." }),
-    { status: 405, headers: { "Content-Type": "application/json" } }
-  );
-}
-

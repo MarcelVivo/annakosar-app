@@ -30,3 +30,7 @@ export function createBrowserClient(): SupabaseClient {
 
   return browserClient;
 }
+
+export function createSupabaseBrowserClient(): SupabaseClient {
+  return createBrowserClient();
+}
