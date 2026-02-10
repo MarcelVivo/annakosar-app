@@ -4,30 +4,33 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 type RegisterBody = {
   email?: string;
   password?: string;
-  firstName?: string;
-  lastName?: string;
+  first_name?: string;
+  last_name?: string;
 };
 
 export async function POST(request: Request) {
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(
-      JSON.stringify({ success: true, message: "Skipped during build." }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
   const body: RegisterBody | null = await request.json().catch(() => null);
 
   const email = body?.email?.trim();
-  const password = body?.password;
-  const firstName = body?.firstName?.trim();
-  const lastName = body?.lastName?.trim();
+  const password = body?.password?.trim();
+  const first_name = body?.first_name?.trim();
+  const last_name = body?.last_name?.trim();
 
-  if (!email || !password || !firstName || !lastName) {
+  if (!email || !password || !first_name || !last_name) {
     return new Response(
       JSON.stringify({
         success: false,
-        message: "Email, password, first name and last name are required.",
+        message: "email, password, first_name and last_name are required.",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (password.length < 6) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: "Password must be at least 6 characters long.",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
@@ -39,6 +42,12 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name,
+          last_name,
+        },
+      },
     });
 
     if (error || !data?.user) {
@@ -51,27 +60,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const userId = data.user.id;
-
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: userId,
-      first_name: firstName,
-      last_name: lastName,
-      role: "user",
-    });
-
-    if (profileError) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: "Profile creation failed.",
-        }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
     return new Response(
-      JSON.stringify({ success: true, id: userId, role: "user" }),
+      JSON.stringify({
+        success: true,
+        id: data.user.id,
+        email: data.user.email,
+      }),
       { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -83,14 +77,9 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(
-      JSON.stringify({ success: true, message: "Skipped during build." }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  }
   return new Response(
     JSON.stringify({ success: false, message: "Method not allowed." }),
     { status: 405, headers: { "Content-Type": "application/json" } }
   );
 }
+

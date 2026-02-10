@@ -3,89 +3,32 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Mode = "login" | "signup";
-
-function getPasswordStrength(password: string): {
-  label: string;
-  color: "red" | "orange" | "green";
-} {
-  const hasLetters = /[A-Za-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecial = /[^A-Za-z0-9]/.test(password);
-  const length = password.length;
-
-  if (length < 8) {
-    return { label: "Zu kurz", color: "red" };
-  }
-
-  if (length >= 10 && hasLetters && hasNumbers && hasSpecial) {
-    return { label: "Stark", color: "green" };
-  }
-
-  if (hasLetters && hasNumbers) {
-    return { label: "Gut", color: "green" };
-  }
-
-  return { label: "Schwach", color: "orange" };
-}
-
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const passwordStrength =
-    mode === "signup" && password.length > 0
-      ? getPasswordStrength(password)
-      : null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setPasswordError(null);
     setLoading(true);
 
-    const endpoint =
-      mode === "login" ? "/api/auth/login" : "/api/auth/register";
-
-    if (mode === "signup" && password !== passwordConfirm) {
-      setPasswordError("Passwörter stimmen nicht überein.");
-      setLoading(false);
-      return;
-    }
-
-    const payload =
-      mode === "login"
-        ? { email, password }
-        : {
-            email,
-            password,
-            firstName,
-            lastName,
-            first_name: firstName,
-            last_name: lastName,
-          };
-
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email, password }),
       });
 
-      if (response.ok) {
+      const data = await response.json().catch(() => null);
+
+      if (response.ok && data?.success) {
         router.push("/book");
         return;
       }
 
-      const data = await response.json().catch(() => ({}));
       setError(
         typeof data?.message === "string"
           ? data.message
@@ -101,9 +44,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-white px-6 text-gray-900">
       <div className="w-full max-w-md">
-        <h1 className="mb-4 text-2xl font-semibold text-center">
-          {mode === "login" ? "Login" : "Registrieren"}
-        </h1>
+        <h1 className="mb-4 text-2xl font-semibold text-center">Login</h1>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1">
@@ -133,70 +74,6 @@ export default function LoginPage() {
               className="w-full rounded border px-3 py-2"
             />
           </div>
-          {passwordStrength && (
-            <p
-              className={`text-sm ${
-                passwordStrength.color === "red"
-                  ? "text-red-600"
-                  : passwordStrength.color === "orange"
-                  ? "text-orange-500"
-                  : "text-green-600"
-              }`}
-            >
-              Passwort-Stärke: {passwordStrength.label}
-            </p>
-          )}
-
-          {mode === "signup" && (
-            <>
-              <div className="space-y-1">
-                <label className="block text-sm font-medium" htmlFor="passwordConfirm">
-                  Passwort bestätigen
-                </label>
-                <input
-                  id="passwordConfirm"
-                  type="password"
-                  required
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                  className="w-full rounded border px-3 py-2"
-                />
-              </div>
-              {passwordError && (
-                <p className="text-sm text-red-600" role="alert">
-                  {passwordError}
-                </p>
-              )}
-
-              <div className="space-y-1">
-                <label className="block text-sm font-medium" htmlFor="firstName">
-                  Vorname
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full rounded border px-3 py-2"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-sm font-medium" htmlFor="lastName">
-                  Nachname
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  required
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full rounded border px-3 py-2"
-                />
-              </div>
-            </>
-          )}
 
           {error && (
             <p className="text-sm text-red-600" role="alert">
@@ -209,34 +86,17 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded bg-black px-3 py-2 text-white disabled:opacity-60"
           >
-            {loading
-              ? "Bitte warten..."
-              : mode === "login"
-              ? "Einloggen"
-              : "Registrieren"}
+            {loading ? "Bitte warten..." : "Einloggen"}
           </button>
         </form>
 
         <div className="mt-4 text-center text-sm">
-          {mode === "login" ? (
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className="text-blue-600 underline"
-            >
-              Noch kein Konto? Jetzt registrieren
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setMode("login")}
-              className="text-blue-600 underline"
-            >
-              Bereits ein Konto? Zum Login
-            </button>
-          )}
+          <a href="/register" className="text-blue-600 underline">
+            Noch kein Konto? Jetzt registrieren
+          </a>
         </div>
       </div>
     </main>
   );
 }
+

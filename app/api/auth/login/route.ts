@@ -7,16 +7,7 @@ type LoginBody = {
 };
 
 export async function POST(request: Request) {
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(
-      JSON.stringify({ success: true, message: "Skipped during build." }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  const body: LoginBody | null = await request
-    .json()
-    .catch(() => null);
+  const body: LoginBody | null = await request.json().catch(() => null);
 
   const email = body?.email?.trim();
   const password = body?.password;
@@ -53,7 +44,7 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, first_name, last_name")
       .eq("id", userId)
       .single();
 
@@ -61,21 +52,21 @@ export async function POST(request: Request) {
       return new Response(
         JSON.stringify({
           success: false,
-          message: "Could not fetch user role.",
+          message: "Could not fetch user profile.",
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    if (!profile?.role) {
-      return new Response(
-        JSON.stringify({ success: false, message: "User role not found." }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
     return new Response(
-      JSON.stringify({ success: true, id: userId, role: profile.role }),
+      JSON.stringify({
+        success: true,
+        id: userId,
+        email: data.user.email,
+        role: profile?.role ?? null,
+        first_name: profile?.first_name ?? null,
+        last_name: profile?.last_name ?? null,
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -87,14 +78,9 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(
-      JSON.stringify({ success: true, message: "Skipped during build." }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  }
   return new Response(
     JSON.stringify({ success: false, message: "Method not allowed." }),
     { status: 405, headers: { "Content-Type": "application/json" } }
   );
 }
+

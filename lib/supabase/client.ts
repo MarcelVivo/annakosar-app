@@ -7,16 +7,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase public environment variables");
 }
 
-export const client: SupabaseClient = createClient(
-  supabaseUrl,
-  supabaseAnonKey,
-  {
+let browserClient: SupabaseClient | null = null;
+
+export function createBrowserClient(): SupabaseClient {
+  if (browserClient) return browserClient;
+
+  browserClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
     },
-  }
-);
+  });
 
-export const supabaseClient = client;
-export const getSupabaseClient = () => supabaseClient;
+  return browserClient;
+}
