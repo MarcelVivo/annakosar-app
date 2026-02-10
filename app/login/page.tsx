@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,10 +20,17 @@ export default function LoginPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setPasswordError(null);
     setLoading(true);
 
     const endpoint =
       mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+
+    if (mode === "signup" && password !== passwordConfirm) {
+      setPasswordError("Passwörter stimmen nicht überein.");
+      setLoading(false);
+      return;
+    }
 
     const payload =
       mode === "login"
@@ -91,6 +100,25 @@ export default function LoginPage() {
 
           {mode === "signup" && (
             <>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium" htmlFor="passwordConfirm">
+                  Passwort bestätigen
+                </label>
+                <input
+                  id="passwordConfirm"
+                  type="password"
+                  required
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  className="w-full rounded border px-3 py-2"
+                />
+              </div>
+              {passwordError && (
+                <p className="text-sm text-red-600" role="alert">
+                  {passwordError}
+                </p>
+              )}
+
               <div className="space-y-1">
                 <label className="block text-sm font-medium" htmlFor="firstName">
                   Vorname
