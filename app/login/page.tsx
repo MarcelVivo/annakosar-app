@@ -5,6 +5,30 @@ import { useRouter } from "next/navigation";
 
 type Mode = "login" | "signup";
 
+function getPasswordStrength(password: string): {
+  label: string;
+  color: "red" | "orange" | "green";
+} {
+  const hasLetters = /[A-Za-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  const length = password.length;
+
+  if (length < 8) {
+    return { label: "Zu kurz", color: "red" };
+  }
+
+  if (length >= 10 && hasLetters && hasNumbers && hasSpecial) {
+    return { label: "Stark", color: "green" };
+  }
+
+  if (hasLetters && hasNumbers) {
+    return { label: "Gut", color: "green" };
+  }
+
+  return { label: "Schwach", color: "orange" };
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
@@ -16,6 +40,11 @@ export default function LoginPage() {
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const passwordStrength =
+    mode === "signup" && password.length > 0
+      ? getPasswordStrength(password)
+      : null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -97,6 +126,19 @@ export default function LoginPage() {
               className="w-full rounded border px-3 py-2"
             />
           </div>
+          {passwordStrength && (
+            <p
+              className={`text-sm ${
+                passwordStrength.color === "red"
+                  ? "text-red-600"
+                  : passwordStrength.color === "orange"
+                  ? "text-orange-500"
+                  : "text-green-600"
+              }`}
+            >
+              Passwort-Stärke: {passwordStrength.label}
+            </p>
+          )}
 
           {mode === "signup" && (
             <>
