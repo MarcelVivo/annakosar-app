@@ -12,10 +12,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: "Supabase ENV missing" },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -41,8 +48,9 @@ export async function POST(req: Request) {
     });
 
   } catch (err) {
+    console.error("REGISTER ERROR:", err);
     return NextResponse.json(
-      { error: "Unexpected server error" },
+      { error: "fetch failed" },
       { status: 500 }
     );
   }
