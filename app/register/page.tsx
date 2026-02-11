@@ -24,6 +24,7 @@ function passwordStrength(password: string): Strength {
 
 export default function RegisterPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -48,12 +49,14 @@ export default function RegisterPage() {
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           email,
           password,
-          first_name: firstName,
-          last_name: lastName,
+          firstName,
+          lastName,
         }),
       });
 
@@ -65,8 +68,8 @@ export default function RegisterPage() {
       }
 
       setError(
-        typeof data?.message === "string"
-          ? data.message
+        typeof data?.error === "string"
+          ? data.error
           : "Registrierung fehlgeschlagen."
       );
     } catch (err) {
@@ -84,6 +87,7 @@ export default function RegisterPage() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+
           <div className="space-y-1">
             <label className="block text-sm font-medium" htmlFor="email">
               Email
@@ -172,6 +176,7 @@ export default function RegisterPage() {
           >
             {loading ? "Bitte warten..." : "Registrieren"}
           </button>
+
         </form>
 
         <div className="mt-4 text-center text-sm">
@@ -183,4 +188,3 @@ export default function RegisterPage() {
     </main>
   );
 }
-
