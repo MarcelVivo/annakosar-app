@@ -27,40 +27,30 @@ export default function BookPage() {
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const hasAuthCookie = () => {
-    if (typeof document === "undefined") return false;
-    const parts = document.cookie ? document.cookie.split(";") : [];
-    return parts.some((part) => {
-      const trimmed = part.trim();
-      if (trimmed.startsWith("sb-access-token=")) return true;
-      if (trimmed.startsWith("supabase-auth-token=")) return true;
-      return (
-        trimmed.startsWith("sb-") &&
-        trimmed.includes("-auth-token=") &&
-        trimmed.split("=").slice(1).join("=").length > 0
-      );
-    });
-  };
-
   const loadAppointments = async () => {
     setFetchError(null);
     setAppointmentsError(null);
-    if (!hasAuthCookie()) {
-      setAppointments([]);
-      setFetchState("idle");
-      setAppointmentsError("Bitte einloggen, um deine Termine zu sehen.");
-      return;
-    }
-
     setFetchState("loading");
+
     try {
-      const res = await fetch("/api/appointments");
-      if (!res.ok) {
+      const res = await fetch("/api/appointments", {
+        credentials: "include",
+      });
+
+      if (res.status === 401) {
         setAppointments([]);
-        setAppointmentsError("Termine konnten nicht geladen werden.");
+        setAppointmentsError("Bitte einloggen, um deine Termine zu sehen.");
         setFetchState("idle");
         return;
       }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          data?.message ?? "Termine konnten nicht geladen werden."
+        );
+      }
+
       const data = await res.json();
       setAppointments(data.appointments ?? []);
       setFetchState("idle");
@@ -83,6 +73,7 @@ export default function BookPage() {
       const res = await fetch("/api/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ type, startsAt }),
       });
 
@@ -106,7 +97,10 @@ export default function BookPage() {
     setCancelError(null);
     setCancellingId(id);
     try {
-      const res = await fetch(`/api/appointments/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(

@@ -1,34 +1,35 @@
 import "server-only";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
 
 export async function POST() {
   try {
-    const supabase = createSupabaseServerClient();
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Logout failed." }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+    const response = NextResponse.json(
+      { success: true },
+      { status: 200 }
     );
+
+    response.cookies.set({
+      name: "sb-access-token",
+      value: "",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
+    });
+
+    return response;
   } catch (err) {
-    return new Response(
-      JSON.stringify({ success: false, message: "Unexpected server error." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { success: false, message: "Unexpected server error." },
+      { status: 500 }
     );
   }
 }
 
 export async function GET() {
-  return new Response(
-    JSON.stringify({ success: false, message: "Method not allowed." }),
-    { status: 405, headers: { "Content-Type": "application/json" } }
+  return NextResponse.json(
+    { success: false, message: "Method not allowed." },
+    { status: 405 }
   );
 }
-
