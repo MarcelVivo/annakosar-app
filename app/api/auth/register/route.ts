@@ -1,28 +1,22 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, firstName, lastName } = await req.json();
+    const body = await req.json().catch(() => null);
+    const email = body?.email?.trim();
+    const password = body?.password;
+    const firstName = body?.firstName?.trim() ?? "";
+    const lastName = body?.lastName?.trim() ?? "";
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email and password required" },
+        { error: "Email und Passwort sind erforderlich." },
         { status: 400 }
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json(
-        { error: "Supabase ENV missing" },
-        { status: 500 }
-      );
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createSupabaseServerClient();
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -48,9 +42,10 @@ export async function POST(req: Request) {
     });
 
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("REGISTER ERROR:", message);
     return NextResponse.json(
-      { error: "fetch failed" },
+      { error: `Registrierung fehlgeschlagen: ${message}` },
       { status: 500 }
     );
   }
